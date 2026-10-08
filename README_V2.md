@@ -15,10 +15,12 @@ By the end of the lab you will have provisioned and wired together the following
 | Source Connector (Datagen ×2) | Generates user profile and stock trade data into their respective topics |
 | Flink Compute Pool | Serverless compute that runs all Flink SQL statements |
 | Flink Materialized Table (×3) | Keyed user lookup, enriched trade stream, and per-symbol forecast |
+| Snowflake Sink Connector | Streams `trades_forecast` topic into Snowflake in real time |
+| Snowflake Table | `LAB.CONFLUENT.TRADES_FORECAST` — auto-created, live ML forecast data |
 
 > [!NOTE]
-> **Total time:** ~35–45 minutes  
-> **Prerequisites:** Confluent Cloud account with active credits, Confluent CLI installed locally (`confluent`), and Bob (AI agent).
+> **Total time:** ~50–60 minutes
+> **Prerequisites:** Confluent Cloud account with active credits, Confluent CLI installed locally (`confluent`), Bob (AI agent), and a Mac with `brew` available (for Snowflake CLI install). A free Snowflake trial account will be created during the lab.
 
 ![Architecture](screenshots/architecture.png)
 
@@ -69,7 +71,9 @@ The environment name shown in the output (e.g. `dev-day-env`) is what you will r
 
 Open [Confluent Cloud Environments](https://confluent.cloud/environments) and double-check that the environment name matches what you saw in the CLI output. This is the name you will use in your prompts to Bob — for example: *"Run this in my dev-day-env environment."*
 
-> **Note:** The screenshot below is for reference only — the environment name shown in your account may differ.
+<blockquote style="border-left: 4px solid #f0c040; padding: 10px 14px; margin: 8px 0;">
+  <strong>⚠️ Note:</strong> The environment name <code>dev-day-env</code> shown in the screenshot below is just an example. Your pre-created lab environment may have a different name. Always use the actual environment name returned by <code>confluent environment list</code> (or check it directly in the Confluent Cloud UI).
+</blockquote>
 
 ![Environments Overview](screenshots/01-environments.png)
 
@@ -114,10 +118,10 @@ Ask Bob to stand up the mock data streams using Confluent's Datagen Source conne
 <details>
 <summary>⚙️ What Bob does under the hood</summary>
 
-Bob creates configuration files [`configs/connector-users.json`](configs/connector-users.json) and [`configs/connector-stock-trades.json`](configs/connector-stock-trades.json) with your cluster credentials and deploys them:
+Bob generates the connector configuration files dynamically with your cluster credentials and deploys them:
 ```bash
-confluent connect cluster create --config-file configs/connector-users.json --cluster <CLUSTER_ID>
-confluent connect cluster create --config-file configs/connector-stock-trades.json --cluster <CLUSTER_ID>
+confluent connect cluster create --config-file /tmp/connector-users.json --cluster <CLUSTER_ID>
+confluent connect cluster create --config-file /tmp/connector-stock-trades.json --cluster <CLUSTER_ID>
 confluent connect cluster list
 confluent kafka topic consume sample_data_users -b --value-format avro
 confluent kafka topic consume sample_data_stock_trades -b --value-format avro
@@ -276,24 +280,21 @@ Check **Flink** → **Materialized tables** and **Statements** in the Confluent 
 
 ![Flink Materialized Tables](screenshots/04-flink-materialized-tables.png)
 
-![Flink Statements](screenshots/04b-flink-statements.png)
-
 ---
 
-## 6. Query Live Enriched & Forecast Streams
+## 6. Query Live Enriched & Forecast Streams (Confluent SQL Workspace)
 
-Inspect the live streams in the SQL workspace to see the real-time predictions.
+Inspect the live streams in the Confluent SQL Workspace to verify that transformations and real-time predictions are producing data.
 
 ### 6.1 Inspect Enriched Trades
 
-### 💬 Prompt Bob
+Open your **SQL Workspace** in Confluent Cloud (or connect via Flink Shell) and run:
 
-> **"Show me the SQL query to inspect the live `trades_enriched` stream."**
-
-In your **SQL Workspace** (or via Flink Shell), run:
 ```sql
 SELECT * FROM trades_enriched;
 ```
+
+You will see live trade transactions continuously enriched with user demographics (`regionid`, `gender`) flowing through the pipeline in real time.
 
 ![Query Trades Enriched](screenshots/06-trades-enriched-query.png)
 
@@ -326,32 +327,249 @@ WHERE row_num = 1;
 
 ---
 
-## 7. Cleanup & Resource Teardown
+## 7. Stream Live Forecast Data to Snowflake
 
-When you're finished, tell Bob to tear down all resources so they don't consume credits.
+With `trades_forecast` now producing real-time ML predictions and verified in Confluent Cloud, this step connects Confluent Cloud to Snowflake — streaming every forecast row into a live Snowflake table automatically. You will sign up for a free Snowflake trial, install the Snowflake CLI, set up authentication, and deploy the Snowflake Sink Connector entirely through Bob prompts.
+
+By the end of this step you will have a live `LAB.CONFLUENT.TRADES_FORECAST` table in Snowflake that grows continuously as new forecasts are produced by Flink.
+
+---
+
+### 7.1 Sign Up for Snowflake Free Trial
+
+Before Bob can help, you need a Snowflake account. This is a one-time manual step.
+
+1. Go to [https://signup.snowflake.com](https://signup.snowflake.com) and create a free trial account
+2. Choose **AWS** as your cloud provider and **US East (Ohio)** as the region — this matches your Confluent Cloud cluster
+3. Verify your email and log in to [https://app.snowflake.com](https://app.snowflake.com)
+4. Once logged in, find your **account identifier** from the URL: `https://app.snowflake.com/<org>/<account>` — note both parts (e.g. `vrlnecq` and `xo34979`) combined as `vrlnecq-xo34979`
+
+> **Note:** You can also find your account identifier by clicking your account name in the **bottom-left** of the Snowflake UI.
+
+---
+
+### 7.2 Install Snowflake CLI
 
 ### 💬 Prompt Bob
 
-> **"Tear down and clean up all resources created for this lab: drop the Flink materialized tables (`trades_forecast`, `trades_enriched`, `users_keyed`), delete both Datagen connectors, delete the Flink compute pool `dev-day-pool`, and delete the Kafka cluster `dev-day-cluster`."**
+> **"Install the Snowflake CLI tool on my Machine."**
 
 <details>
 <summary>⚙️ What Bob does under the hood</summary>
 
-Bob tears down the assets in reverse dependency order:
 ```bash
-# 1. Drop Flink Materialized Tables
-confluent flink statement create drop-forecast --database <CLUSTER_ID> --sql "DROP MATERIALIZED TABLE trades_forecast;" --wait
-confluent flink statement create drop-enriched --database <CLUSTER_ID> --sql "DROP MATERIALIZED TABLE trades_enriched;" --wait
-confluent flink statement create drop-users-keyed --database <CLUSTER_ID> --sql "DROP MATERIALIZED TABLE users_keyed;" --wait
-
-# 2. Delete Datagen Connectors
-confluent connect cluster delete <USERS_CONNECTOR_ID> --cluster <CLUSTER_ID>
-confluent connect cluster delete <STOCKS_CONNECTOR_ID> --cluster <CLUSTER_ID>
-
-# 3. Delete Flink Compute Pool
-confluent flink compute-pool delete <COMPUTE_POOL_ID>
-
-# 4. Delete Kafka Cluster
-confluent kafka cluster delete <CLUSTER_ID>
+brew install snowflake-cli
+snow --version
 ```
 </details>
+
+**Expected output:** `Snowflake CLI version: 3.x.x` ✅
+
+> ⚠️ You may see a harmless `UserWarning: incompatible version of 'pyarrow'` warning after every `snow` command. It does not affect functionality — ignore it.
+
+---
+
+### 7.3 Connect Snowflake CLI to Your Account
+
+This step requires your Snowflake password — **you will run this command yourself** in the terminal. Bob cannot enter passwords on your behalf.
+
+### 💬 Prompt Bob
+
+> **"What command do I run to add my Snowflake account to the Snow CLI? My account identifier is `<YOUR_ACCOUNT_ID>`, my username is `<YOUR_USERNAME>`, and my warehouse is `COMPUTE_WH`."**
+
+Bob will print the exact command for you. It will look like:
+
+```bash
+snow connection add \
+  --connection-name lab \
+  --account <YOUR_ACCOUNT_ID> \
+  --user <YOUR_USERNAME> \
+  --warehouse COMPUTE_WH \
+  --database SNOWFLAKE \
+  --schema PUBLIC
+```
+
+> ⚠️ **Run this command yourself.** It will prompt you for your password interactively — this is intentional. Use `--database SNOWFLAKE` (not `LAB`) at this stage since the LAB database doesn't exist yet.
+
+Once you've run it, ask Bob to verify the connection:
+
+### 💬 Prompt Bob
+
+> **"Verify my Snowflake CLI connection called `lab` is working."**
+
+<details>
+<summary>⚙️ What Bob does under the hood</summary>
+
+```bash
+snow sql --connection lab -q "SELECT CURRENT_USER(), CURRENT_ACCOUNT();"
+```
+</details>
+
+**Expected output:** Your Snowflake username and account ID returned ✅
+
+---
+
+### 7.4 Create Snowflake Database and Schema
+
+### 💬 Prompt Bob
+
+> **"Create a database called `LAB` and a schema called `CONFLUENT` inside it in Snowflake using the `lab` connection."**
+
+<details>
+<summary>⚙️ What Bob does under the hood</summary>
+
+```bash
+snow sql --connection lab -q "
+CREATE DATABASE IF NOT EXISTS LAB;
+CREATE SCHEMA IF NOT EXISTS LAB.CONFLUENT;
+"
+```
+</details>
+
+**Expected output:** `Database LAB successfully created` and `Schema CONFLUENT successfully created` ✅
+
+> ℹ️ **Do NOT create the `TRADES_FORECAST` table yourself.** The connector will auto-create it with the correct schema. Pre-creating it causes a schema compatibility error.
+
+---
+
+### 7.5 Generate RSA Key Pair & Assign to Your Snowflake User
+
+The Snowflake Sink Connector does **not** support username + password authentication — it requires an RSA key pair. Bob will generate the key pair and assign the public key to your Snowflake user.
+
+### 💬 Prompt Bob
+
+> **"Generate an RSA key pair for the Snowflake Sink Connector and assign the public key to my Snowflake user `<YOUR_USERNAME>` using the `lab` connection."**
+
+<details>
+<summary>⚙️ What Bob does under the hood</summary>
+
+```bash
+# Generate 2048-bit RSA private key (PKCS8, unencrypted)
+openssl genrsa 2048 | openssl pkcs8 -topk8 -nocrypt -out /tmp/snowflake_key.p8
+
+# Derive public key
+openssl rsa -in /tmp/snowflake_key.p8 -pubout -out /tmp/snowflake_key.pub
+
+# Assign public key to your Snowflake user
+PUB_KEY=$(cat /tmp/snowflake_key.pub | grep -v "PUBLIC KEY" | tr -d '\n')
+snow sql --connection lab -q "ALTER USER <YOUR_USERNAME> SET RSA_PUBLIC_KEY='$PUB_KEY';"
+```
+</details>
+
+**Expected output:** `Statement executed successfully` ✅
+
+---
+
+### 7.6 Deploy the Snowflake Sink Connector
+
+### 💬 Prompt Bob
+
+> **"Deploy a Snowflake Sink Connector called `SnowflakeSink_trades_forecast` that streams the `trades_forecast` Kafka topic into `LAB.CONFLUENT` in Snowflake. Use my Snowflake account `<YOUR_ACCOUNT_ID>`, username `<YOUR_USERNAME>`, role `ACCOUNTADMIN`, SNOWPIPE_STREAMING ingestion with schematization enabled, and AVRO input format."**
+
+<details>
+<summary>⚙️ What Bob does under the hood</summary>
+
+Bob builds the connector config via Python (to safely embed the private key) then deploys it:
+
+```python
+# Build config — Python handles the base64 key safely on macOS
+import json
+
+with open('/tmp/snowflake_key.p8') as f:
+    lines = f.readlines()
+private_key = ''.join(l.strip() for l in lines if 'PRIVATE KEY' not in l)
+
+config = {
+  "name": "SnowflakeSink_trades_forecast",
+  "config": {
+    "connector.class": "SnowflakeSink",
+    "kafka.auth.mode": "KAFKA_API_KEY",
+    "kafka.api.key": "<KAFKA_API_KEY>",
+    "kafka.api.secret": "<KAFKA_API_SECRET>",
+    "topics": "trades_forecast",
+    "input.data.format": "AVRO",
+    "snowflake.url.name": "<YOUR_ACCOUNT_ID>.snowflakecomputing.com",
+    "snowflake.user.name": "<YOUR_USERNAME>",
+    "snowflake.private.key": private_key,
+    "snowflake.role.name": "ACCOUNTADMIN",
+    "snowflake.database.name": "LAB",
+    "snowflake.schema.name": "CONFLUENT",
+    "snowflake.ingestion.method": "SNOWPIPE_STREAMING",
+    "snowflake.enable.schematization": "true",
+    "tasks.max": "1"
+  }
+}
+```
+
+```bash
+confluent connect cluster create \
+  --config-file /tmp/connector-snowflake-sink.json \
+  --cluster <CLUSTER_ID>
+```
+</details>
+
+### UI Verification Checkpoint
+
+Navigate to **Connectors** in the Confluent Cloud console. Confirm `SnowflakeSink_trades_forecast` shows **Running** status with **1 task running**.
+
+![All connectors running including Snowflake Sink](screenshots/09-connector-snowflake-running.png)
+
+![Snowflake Sink connector detail — Running, 1 task](screenshots/10-snowflake-sink-detail.png)
+
+---
+
+### 7.7 Verify Live Data Arriving in Snowflake
+
+Wait approximately **90 seconds** after the connector reaches Running status, then ask Bob to check.
+
+### 💬 Prompt Bob
+
+> **"Check how many rows have arrived in `LAB.CONFLUENT.TRADES_FORECAST` in Snowflake, and show me the 10 most recent forecast rows."**
+
+<details>
+<summary>⚙️ What Bob does under the hood</summary>
+
+```bash
+# Row count
+snow sql --connection lab -q "SELECT COUNT(*) FROM LAB.CONFLUENT.TRADES_FORECAST;"
+
+# Latest 10 rows
+snow sql --connection lab -q "
+SELECT SYMBOL, TS, CURRENT_COUNT, FORECAST_COUNT, UPPER_BOUND
+FROM LAB.CONFLUENT.TRADES_FORECAST
+ORDER BY TS DESC
+LIMIT 10;"
+```
+</details>
+
+**Expected output (example):**
+```
+SYMBOL | TS            | CURRENT_COUNT | FORECAST_COUNT | UPPER_BOUND
+ZWZZT  | 1791388000000 | 19            | 23.0           | 67.0
+ZBZX   | 1791388000000 | 16            | 16.0           | 30.0
+ZVV    | 1791388000000 | 16            | 15.0           | 31.0
+ZJZZT  | 1791388000000 | 28            | 18.0           | 36.0
+...
+```
+
+> ℹ️ Row count grows slowly at first — `ML_FORECAST` needs a minimum of 10 training windows per symbol before emitting forecasts. Once that threshold is met, new rows arrive every ~10 seconds per symbol.
+
+### UI Verification Checkpoint — Snowflake
+
+Open [Snowflake](https://app.snowflake.com) and navigate to **LAB → CONFLUENT → TRADES_FORECAST**. You should see the table auto-created with 6 columns and a live row count growing.
+
+![Snowflake table auto-created with named columns](screenshots/11-snowflake-table-created.png)
+
+Click the **Preview** tab to see live rows streaming in from Confluent.
+
+![Live forecast data in Snowflake](screenshots/12-snowflake-live-data.png)
+
+#### What the columns mean
+- **`SYMBOL`** — Stock ticker (e.g. `ZBZX`, `ZVZZT`)
+- **`TS`** — Window end timestamp in milliseconds
+- **`CURRENT_COUNT`** — Actual trades recorded in the latest 10-second window
+- **`FORECAST_COUNT`** — ML-predicted trade volume for the next window
+- **`UPPER_BOUND`** — Upper confidence bound of the forecast
+- **`RECORD_METADATA`** — Kafka metadata (partition, offset, topic, timestamp)
+
+When `FORECAST_COUNT` > `CURRENT_COUNT`, trading activity is **heating up** — the platform can proactively provision capacity or trigger alerts before the surge peaks.

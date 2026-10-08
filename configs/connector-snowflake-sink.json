@@ -1,0 +1,21 @@
+{
+  "name": "SnowflakeSink_trades_forecast",
+  "config": {
+    "connector.class": "SnowflakeSink",
+    "name": "SnowflakeSink_trades_forecast",
+    "kafka.auth.mode": "KAFKA_API_KEY",
+    "kafka.api.key": "${KAFKA_API_KEY}",
+    "kafka.api.secret": "${KAFKA_API_SECRET}",
+    "topics": "trades_forecast",
+    "input.data.format": "AVRO",
+    "snowflake.url.name": "vrlnecq-xo34979.snowflakecomputing.com",
+    "snowflake.user.name": "CSAL",
+    "snowflake.private.key": "${SNOWFLAKE_PRIVATE_KEY}",
+    "snowflake.role.name": "ACCOUNTADMIN",
+    "snowflake.database.name": "LAB",
+    "snowflake.schema.name": "CONFLUENT",
+    "snowflake.ingestion.method": "SNOWPIPE_STREAMING",
+    "snowflake.enable.schematization": "true",
+    "tasks.max": "1"
+  }
+}

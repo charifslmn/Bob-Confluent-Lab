@@ -1,0 +1,14 @@
+{
+  "name": "DatagenSource_users",
+  "config": {
+    "connector.class": "DatagenSource",
+    "name": "DatagenSource_users",
+    "kafka.auth.mode": "KAFKA_API_KEY",
+    "kafka.api.key": "${KAFKA_API_KEY}",
+    "kafka.api.secret": "${KAFKA_API_SECRET}",
+    "kafka.topic": "sample_data_users",
+    "output.data.format": "AVRO",
+    "quickstart": "USERS",
+    "tasks.max": "1"
+  }
+}

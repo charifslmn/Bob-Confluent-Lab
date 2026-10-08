@@ -1,0 +1,14 @@
+{
+  "name": "DatagenSource_stock_trades",
+  "config": {
+    "connector.class": "DatagenSource",
+    "name": "DatagenSource_stock_trades",
+    "kafka.auth.mode": "KAFKA_API_KEY",
+    "kafka.api.key": "${KAFKA_API_KEY}",
+    "kafka.api.secret": "${KAFKA_API_SECRET}",
+    "kafka.topic": "sample_data_stock_trades",
+    "output.data.format": "AVRO",
+    "quickstart": "STOCK_TRADES",
+    "tasks.max": "1"
+  }
+}
