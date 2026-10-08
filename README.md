@@ -32,9 +32,6 @@ By the end of the lab you will have provisioned and wired together the following
                                                                              │
                                                                              ▼ (Tumble Window + ML_FORECAST)
                                                                       [ Materialized Table: trades_forecast ]
-                                                                             │
-                                                                             ▼
-                                                                      [ Real-Time Surges & Bounds ]
 ```
 
 ---
