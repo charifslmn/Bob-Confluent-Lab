@@ -22,18 +22,6 @@ By the end of the lab you will have provisioned and wired together the following
 
 ---
 
-## Architecture Overview
-
-```
-[ Datagen: Users ]        --> [ Topic: sample_data_users ]        --> [ Materialized Table: users_keyed ]
-                                                                             │
-                                                                             ▼ (Temporal Join)
-[ Datagen: Stock Trades ] --> [ Topic: sample_data_stock_trades ] --> [ Materialized Table: trades_enriched ]
-                                                                             │
-                                                                             ▼ (Tumble Window + ML_FORECAST)
-                                                                      [ Materialized Table: trades_forecast ]
-```
-
 ---
 
 ## 1. Authentication & Environment Setup
