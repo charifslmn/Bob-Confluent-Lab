@@ -35,6 +35,33 @@ This lab covers the same stages as the UI lab, translated to CLI commands:
 
 ---
 
+## Current Work — Governance & Tableflow Extension (branch: `testing-v1`)
+
+The base lab (Steps 1–7 in `README.md`, plus the Snowflake sink in `README_V2.md`) does not yet showcase three Confluent capabilities. The current effort is to **extend the lab to cover them**, rebuild the whole pipeline end-to-end, and capture fresh screenshots.
+
+| # | Gap | Plan | CLI / UI | Risk |
+|---|---|---|---|---|
+| 1 | **Schema Registry** — the Avro schemas behind each topic are never shown | New step 6.3: list subjects, describe latest schema of `trades_forecast-value`; screenshot the topic **Data contracts** tab. Optional: set BACKWARD compatibility to show schema evolution | Both (`confluent schema-registry ...`) | Low |
+| 2 | **Stream Lineage** — the end-to-end graph is never shown | New step 6.4: open Stream Lineage on `trades_forecast` after the full pipeline (incl. Snowflake sink) is running; screenshot the graph | UI only | Low |
+| 3 | **Tableflow** — exposing a topic as an Iceberg table for an external service (Snowflake) | New step 8: enable Tableflow on `trades_forecast` and compare it with the sink connector (no data copy vs. pushed rows). Cleanup moves to step 9 | Mostly CLI (`confluent tableflow topic enable`, `confluent tableflow catalog-integration create`) | Medium |
+
+### Tableflow constraints found during research
+
+- Topics on **Confluent Managed Storage do not sync to external catalogs** (e.g. Snowflake, Glue). Snowflake reads need **BYOS** (S3 bucket + AWS provider integration).
+- **Snowflake Open Catalog is closed to new accounts**; the docs point new deployments to **Snowflake Horizon Catalog** federation (not yet verified in full).
+- **Flink retract-changelog tables are not supported**; `ML_FORECAST` / upsert outputs must be tested.
+- Tableflow freshness is ~5 minutes; Flink cannot query Iceberg tables.
+- Two approaches under consideration: **Option A** (managed storage, show table + built-in Iceberg REST Catalog, no Snowflake read) and **Option B** (BYOS on S3 + Snowflake catalog integration, query from Snowflake).
+
+### Execution plan
+
+1. Rebuild the entire lab on Confluent Cloud (cluster, Datagen connectors, Flink pool, 3 materialized tables, Snowflake sink).
+2. Spike Tableflow on `trades_forecast` to settle the changelog and storage questions, then pick Option A or B.
+3. Capture screenshots: Schema Registry data contract, Stream Lineage graph, Tableflow status (and Snowflake query if Option B).
+4. Write the new steps into the lab README, verify, then tear down all resources (zero charges).
+
+---
+
 ## Planned Additions (post-initial build)
 
 - Shell script to run the full lab end-to-end in one command
