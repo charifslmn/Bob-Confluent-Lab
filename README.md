@@ -18,10 +18,6 @@ By the end of the lab you will have provisioned and wired together the following
 | Snowflake Sink Connector | Streams `trades_forecast` topic into Snowflake in real time |
 | Snowflake Table | `LAB.CONFLUENT.TRADES_FORECAST` — auto-created, live ML forecast data |
 
-> [!NOTE]
-> **Total time:** ~50–60 minutes
-> **Prerequisites:** Confluent Cloud account with active credits, Confluent CLI installed locally (`confluent`), Bob (AI agent), and a Mac with `brew` available (for Snowflake CLI install). A free Snowflake trial account will be created during the lab.
-
 ![Architecture](screenshots/architecture.png)
 
 ---
