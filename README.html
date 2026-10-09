@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Trade Forecasting with Confluent Intelligence (AI Agent CLI Lab)</title>
+
+  <!-- IBM Plex from the IBM CDN -->
+  <link rel="stylesheet" href="https://1.www.s81c.com/common/carbon/plex/sans.css" />
+  <link rel="stylesheet" href="https://1.www.s81c.com/common/carbon/plex/mono.css" />
+
+  <style>
+    /* ---- Carbon white theme tokens (CSS custom properties) ---- */
+    :root {
+      --cds-background: #ffffff;
+      --cds-layer-01: #f4f4f4;
+      --cds-layer-02: #ffffff;
+      --cds-layer-accent-01: #e0e0e0;
+      --cds-border-subtle-01: #c6c6c6;
+      --cds-border-strong-01: #8d8d8d;
+      --cds-text-primary: #161616;
+      --cds-text-secondary: #525252;
+      --cds-text-on-color: #ffffff;
+      --cds-link-primary: #0f62fe;
+      --cds-link-primary-hover: #0043ce;
+      --cds-interactive: #0f62fe;
+      --cds-focus: #0f62fe;
+      --cds-support-info: #0043ce;
+      --cds-support-warning: #f1c21b;
+      --cds-support-success: #198038;
+      --cds-notification-background-info: #edf5ff;
+      --cds-notification-background-warning: #fcf4d6;
+      --cds-notification-background-success: #defbe6;
+      --cds-background-inverse: #393939;
+      --cds-shell-bg: #161616;
+      --cds-spacing-03: 0.5rem;
+      --cds-spacing-04: 0.75rem;
+      --cds-spacing-05: 1rem;
+      --cds-spacing-06: 1.5rem;
+      --cds-spacing-07: 2rem;
+      --cds-spacing-08: 2.5rem;
+      --cds-spacing-09: 3rem;
+      --cds-spacing-10: 4rem;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 4rem; }
+    body {
+      margin: 0;
+      background: var(--cds-background);
+      color: var(--cds-text-primary);
+      font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+      font-size: 1rem;
+      line-height: 1.5;
+      letter-spacing: 0;
+    }
+    code, pre, kbd { font-family: 'IBM Plex Mono', Menlo, Consolas, monospace; }
+    /* The IBM CDN Plex files drop the space glyph at weights 300 and 700, so use 400 and 600 only */
+    strong, b { font-weight: 600; }
+
+    a { color: var(--cds-link-primary); text-decoration: none; }
+    a:hover { color: var(--cds-link-primary-hover); text-decoration: underline; }
+    a:focus-visible, summary:focus-visible { outline: 2px solid var(--cds-focus); outline-offset: 2px; }
+
+    /* ---- UI shell header ---- */
+    .shell-header {
+      position: fixed; top: 0; left: 0; right: 0; height: 3rem; z-index: 100;
+      display: flex; align-items: center;
+      background: var(--cds-shell-bg);
+      border-bottom: 1px solid #393939;
+      color: #f4f4f4;
+      font-size: 0.875rem;
+    }
+    .shell-header .brand { padding: 0 var(--cds-spacing-05); font-weight: 400; letter-spacing: 0.16px; }
+    .shell-header .brand strong { font-weight: 600; }
+    .shell-header .spacer { flex: 1; }
+    .shell-header a.hdr-link {
+      color: #c6c6c6; padding: 0 var(--cds-spacing-05); height: 3rem;
+      display: flex; align-items: center;
+    }
+    .shell-header a.hdr-link:hover { background: #2a2a2a; color: #fff; text-decoration: none; }
+
+    /* ---- Page grid (Carbon 2x grid: 4 / 8 / 16 columns) ---- */
+    .cds--grid { max-width: 99rem; margin: 0 auto; padding: 0 var(--cds-spacing-05); }
+    .cds--row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); column-gap: var(--cds-spacing-05); }
+    .cds--col-sm-4 { grid-column: span 4; }
+    @media (min-width: 42rem) {
+      .cds--row { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+      .cds--col-md-8 { grid-column: span 8; }
+    }
+    @media (min-width: 66rem) {
+      .cds--row { grid-template-columns: repeat(16, minmax(0, 1fr)); }
+      .cds--col-lg-3 { grid-column: span 3; }
+      .cds--col-lg-11 { grid-column: span 11; }
+      .cds--offset-lg-1 { grid-column-start: auto; }
+    }
+    @media (max-width: 65.99rem) { .side-nav { display: none; } }
+
+    /* ---- Hero ---- */
+    .hero {
+      margin-top: 3rem;
+      background: var(--cds-layer-01);
+      border-bottom: 1px solid var(--cds-border-subtle-01);
+      padding: var(--cds-spacing-09) 0 var(--cds-spacing-07);
+    }
+    .eyebrow { font-size: 0.75rem; letter-spacing: 0.32px; text-transform: uppercase; color: var(--cds-text-secondary); margin: 0 0 var(--cds-spacing-04); }
+    .hero h1 { font-size: 2.625rem; line-height: 1.19; font-weight: 400; margin: 0 0 var(--cds-spacing-05); max-width: 52rem; }
+    .hero p.lede { font-size: 1.25rem; line-height: 1.4; color: var(--cds-text-secondary); max-width: 46rem; margin: 0 0 var(--cds-spacing-06); }
+    .tag-row { display: flex; flex-wrap: wrap; gap: var(--cds-spacing-03); }
+
+    /* ---- Side navigation ---- */
+    .side-nav { position: sticky; top: 3rem; align-self: start; height: calc(100vh - 3rem); overflow-y: auto; padding: var(--cds-spacing-07) 0; border-right: 1px solid var(--cds-border-subtle-01); }
+    .side-nav h2 { font-size: 0.75rem; letter-spacing: 0.32px; text-transform: uppercase; color: var(--cds-text-secondary); margin: 0 0 var(--cds-spacing-04); padding-left: var(--cds-spacing-05); font-weight: 400; }
+    .side-nav ul { list-style: none; margin: 0; padding: 0; }
+    .side-nav a { display: block; padding: 0.5rem var(--cds-spacing-05); font-size: 0.875rem; color: var(--cds-text-secondary); border-left: 3px solid transparent; }
+    .side-nav a:hover { background: var(--cds-layer-01); color: var(--cds-text-primary); text-decoration: none; }
+    .side-nav a.sub { padding-left: var(--cds-spacing-07); font-size: 0.8125rem; }
+
+    /* ---- Content ---- */
+    main { padding: var(--cds-spacing-07) 0 var(--cds-spacing-10); }
+    section.step { padding-top: var(--cds-spacing-07); margin-top: var(--cds-spacing-07); border-top: 1px solid var(--cds-border-subtle-01); }
+    section.step:first-of-type { border-top: none; margin-top: 0; padding-top: 0; }
+    h2 { font-size: 2rem; line-height: 1.25; font-weight: 400; margin: 0 0 var(--cds-spacing-05); }
+    h3 { font-size: 1.25rem; line-height: 1.4; font-weight: 400; margin: var(--cds-spacing-07) 0 var(--cds-spacing-04); }
+    h4 { font-size: 1rem; font-weight: 600; margin: var(--cds-spacing-06) 0 var(--cds-spacing-03); }
+    p { margin: 0 0 var(--cds-spacing-05); max-width: 46rem; }
+    ul.plain, ol.plain { max-width: 46rem; padding-left: var(--cds-spacing-06); margin: 0 0 var(--cds-spacing-05); }
+    ul.plain li, ol.plain li { margin-bottom: var(--cds-spacing-03); }
+    .step-label { display: inline-block; margin-bottom: var(--cds-spacing-03); }
+    :not(pre) > code { background: var(--cds-layer-01); padding: 0.0625rem 0.375rem; font-size: 0.875rem; }
+
+    /* ---- Tables (Carbon data-table look) ---- */
+    table.cds-table { width: 100%; border-collapse: collapse; margin: 0 0 var(--cds-spacing-06); font-size: 0.875rem; }
+    table.cds-table th { text-align: left; background: var(--cds-layer-accent-01); padding: 0.75rem var(--cds-spacing-05); font-weight: 600; }
+    table.cds-table td { padding: 0.75rem var(--cds-spacing-05); border-bottom: 1px solid var(--cds-border-subtle-01); background: var(--cds-layer-01); vertical-align: top; }
+    table.cds-table tr:nth-child(even) td { background: var(--cds-background); }
+    .table-wrap { overflow-x: auto; }
+
+    /* ---- Prompt tile ---- */
+    .prompt {
+      background: var(--cds-layer-01);
+      border-left: 3px solid var(--cds-interactive);
+      padding: var(--cds-spacing-05) var(--cds-spacing-06);
+      margin: 0 0 var(--cds-spacing-05);
+      max-width: 52rem;
+    }
+    .prompt .prompt-label { font-size: 0.75rem; letter-spacing: 0.32px; text-transform: uppercase; color: var(--cds-text-secondary); margin: 0 0 var(--cds-spacing-03); }
+    .prompt p { margin: 0; font-size: 1.125rem; line-height: 1.5; font-style: italic; }
+
+    /* ---- Inline notifications ---- */
+    .note {
+      display: block; max-width: 52rem;
+      border: 1px solid; border-left-width: 3px;
+      padding: var(--cds-spacing-04) var(--cds-spacing-05);
+      margin: 0 0 var(--cds-spacing-05);
+      font-size: 0.875rem; line-height: 1.43;
+    }
+    .note .note-title { font-weight: 600; display: block; margin-bottom: 0.25rem; }
+    .note p { font-size: 0.875rem; margin: 0; max-width: none; }
+    .note p + p { margin-top: var(--cds-spacing-03); }
+    .note.info    { background: var(--cds-notification-background-info);    border-color: #edf5ff; border-left-color: var(--cds-support-info); }
+    .note.warning { background: var(--cds-notification-background-warning); border-color: #fcf4d6; border-left-color: var(--cds-support-warning); }
+    .note.success { background: var(--cds-notification-background-success); border-color: #defbe6; border-left-color: var(--cds-support-success); }
+
+    /* ---- Checkpoint ---- */
+    .checkpoint { margin: var(--cds-spacing-06) 0 var(--cds-spacing-05); max-width: 52rem; }
+    .checkpoint .cp-title { display: flex; align-items: center; gap: var(--cds-spacing-03); font-size: 1rem; font-weight: 600; margin: 0 0 var(--cds-spacing-03); }
+
+    /* ---- Figures ---- */
+    figure { margin: 0 0 var(--cds-spacing-06); max-width: 52rem; }
+    figure img { display: block; max-width: 100%; height: auto; border: 1px solid var(--cds-border-subtle-01); background: #fff; }
+    figcaption { font-size: 0.75rem; letter-spacing: 0.32px; color: var(--cds-text-secondary); margin-top: var(--cds-spacing-03); }
+
+    /* ---- Code / accordion ---- */
+    cds-accordion { display: block; max-width: 52rem; margin: 0 0 var(--cds-spacing-05); }
+    cds-code-snippet { display: block; max-width: 100%; }
+    .acc-body { padding: var(--cds-spacing-03) 0; }
+    .acc-body p { font-size: 0.875rem; }
+    pre.block {
+      background: var(--cds-layer-01); margin: 0 0 var(--cds-spacing-05); padding: var(--cds-spacing-05);
+      overflow-x: auto; font-size: 0.8125rem; line-height: 1.54; max-width: 52rem;
+      border-bottom: 1px solid var(--cds-border-strong-01);
+    }
+
+    /* ---- Footer ---- */
+    footer { background: var(--cds-layer-01); border-top: 1px solid var(--cds-border-subtle-01); padding: var(--cds-spacing-06) 0; font-size: 0.75rem; color: var(--cds-text-secondary); }
+  </style>
+
+  <!-- Carbon Web Components from the IBM CDN (v2.24.0) -->
+  <script type="module" src="https://1.www.s81c.com/common/carbon/web-components/version/v2.24.0/accordion.min.js"></script>
+  <script type="module" src="https://1.www.s81c.com/common/carbon/web-components/version/v2.24.0/code-snippet.min.js"></script>
+  <script type="module" src="https://1.www.s81c.com/common/carbon/web-components/version/v2.24.0/tag.min.js"></script>
+</head>
+
+<body class="cds--white">
+
+  <header class="shell-header">
+    <div class="brand">IBM <strong>Bob</strong> &nbsp;|&nbsp; Confluent Cloud Lab</div>
+    <div class="spacer"></div>
+    <a class="hdr-link" href="https://github.com/charifslmn/Bob-Confluent-Lab">GitHub</a>
+    <a class="hdr-link" href="https://confluent.cloud">Confluent Cloud</a>
+  </header>
+
+  <!-- ================= HERO ================= -->
+  <div class="hero">
+    <div class="cds--grid">
+      <div class="cds--row">
+        <div class="cds--col-sm-4 cds--col-md-8 cds--col-lg-11">
+          <p class="eyebrow">AI Agent CLI Lab</p>
+          <h1>Trade Forecasting with Confluent Intelligence</h1>
+          <p class="lede">Build a fully managed, real-time trade analytics pipeline on Confluent Cloud and stream it to Snowflake, entirely through natural language.</p>
+          <div class="tag-row">
+            <cds-tag type="blue">Confluent Cloud</cds-tag>
+            <cds-tag type="purple">Apache Flink</cds-tag>
+            <cds-tag type="cyan">Snowflake</cds-tag>
+            <cds-tag type="gray">IBM Bob</cds-tag>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cds--grid">
+    <div class="cds--row">
+
+      <!-- ================= SIDE NAV ================= -->
+      <nav class="side-nav cds--col-lg-3" aria-label="Lab steps">
+        <h2>On this page</h2>
+        <ul>
+          <li><a href="#overview">Overview</a></li>
+          <li><a href="#step-1">1. Authentication &amp; Environment</a></li>
+          <li><a href="#step-2">2. Kafka Cluster &amp; API Keys</a></li>
+          <li><a href="#step-3">3. Datagen Source Connectors</a></li>
+          <li><a href="#step-4">4. Flink Compute Pool</a></li>
+          <li><a href="#step-5">5. Enrichment &amp; Forecasting</a></li>
+          <li><a class="sub" href="#step-5-1">5.1 Key Users Lookup</a></li>
+          <li><a class="sub" href="#step-5-2">5.2 Enrich Trades</a></li>
+          <li><a class="sub" href="#step-5-3">5.3 ML_FORECAST</a></li>
+          <li><a href="#step-6">6. Query Live Streams</a></li>
+          <li><a href="#step-7">7. Stream to Snowflake</a></li>
+          <li><a class="sub" href="#step-7-1">7.1 Snowflake trial</a></li>
+          <li><a class="sub" href="#step-7-2">7.2 Snowflake CLI</a></li>
+          <li><a class="sub" href="#step-7-3">7.3 Connect CLI</a></li>
+          <li><a class="sub" href="#step-7-4">7.4 Database &amp; schema</a></li>
+          <li><a class="sub" href="#step-7-5">7.5 RSA key pair</a></li>
+          <li><a class="sub" href="#step-7-6">7.6 Sink connector</a></li>
+          <li><a class="sub" href="#step-7-7">7.7 Verify data</a></li>
+        </ul>
+      </nav>
+
+      <!-- ================= MAIN ================= -->
+      <main class="cds--col-sm-4 cds--col-md-8 cds--col-lg-11">
+
+        <!-- ---------- Overview ---------- -->
+        <section class="step" id="overview">
+          <h2>Overview</h2>
+          <p>In this lab you will build a fully managed, real-time trade analytics pipeline on Confluent Cloud, entirely through natural language. You will direct <strong>Bob (your AI agent)</strong> with plain-English prompts; Bob translates them into the correct Confluent CLI commands and executes them on your behalf. Your job is to verify each step in the Confluent Cloud console as it happens.</p>
+          <p><strong>The scenario:</strong> An online trading platform is streaming stock trades continuously. The team needs to enrich each trade with live customer profile data, then use built-in machine learning to detect which stocks are surging before the peak hits.</p>
+          <p>By the end of the lab you will have provisioned and wired together the following assets:</p>
+
+          <div class="table-wrap">
+            <table class="cds-table">
+              <thead><tr><th>Asset type</th><th>Purpose</th></tr></thead>
+              <tbody>
+                <tr><td>Kafka Cluster</td><td>Managed broker that carries all event streams</td></tr>
+                <tr><td>Kafka Topic (&times;2)</td><td>Continuous streams of synthetic user and trade events</td></tr>
+                <tr><td>Source Connector (Datagen &times;2)</td><td>Generates user profile and stock trade data into their respective topics</td></tr>
+                <tr><td>Flink Compute Pool</td><td>Serverless compute that runs all Flink SQL statements</td></tr>
+                <tr><td>Flink Materialized Table (&times;3)</td><td>Keyed user lookup, enriched trade stream, and per-symbol forecast</td></tr>
+                <tr><td>Snowflake Sink Connector</td><td>Streams the <code>trades_forecast</code> topic into Snowflake in real time</td></tr>
+                <tr><td>Snowflake Table</td><td><code>LAB.CONFLUENT.TRADES_FORECAST</code>: auto-created, live ML forecast data</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <figure>
+            <img src="screenshots/architecture.png" alt="Architecture diagram: Datagen connectors feed Kafka topics, Flink materialized tables enrich and forecast, and a Snowflake sink connector delivers to Snowflake" />
+            <figcaption>Figure 1. Lab architecture.</figcaption>
+          </figure>
+        </section>
+
+        <!-- ---------- Step 1 ---------- -->
+        <section class="step" id="step-1">
+          <cds-tag type="blue" class="step-label">Step 1</cds-tag>
+          <h2>Authentication &amp; Environment Setup</h2>
+          <p>Log in to Confluent Cloud via the CLI and set your active environment context to the pre-provisioned lab environment.</p>
+
+          <h3>CLI Login</h3>
+          <p>Run the following command to authenticate with your Confluent Cloud account:</p>
+          <cds-code-snippet type="multi" wrap-text feedback="Copied!">confluent login --save</cds-code-snippet>
+          <p style="margin-top: var(--cds-spacing-05)">This will open a browser window for SSO login. Once authenticated, your credentials are saved locally for the session.</p>
+
+          <h3>Find Your Lab Environment</h3>
+          <p>A Confluent environment has already been created for this lab. You do not need to create one or set it as active via the CLI. Simply list your environments to find the lab environment name:</p>
+          <cds-code-snippet type="multi" wrap-text feedback="Copied!">confluent environment list</cds-code-snippet>
+          <p style="margin-top: var(--cds-spacing-05)">The environment name shown in the output (e.g. <code>dev-day-env</code>) is what you will reference in your prompts to Bob.</p>
+
+          <div class="checkpoint">
+            <div class="cp-title"><cds-tag type="green">UI checkpoint</cds-tag> Confirm environment name</div>
+            <p>Open <a href="https://confluent.cloud/environments">Confluent Cloud Environments</a> and double-check that the environment name matches what you saw in the CLI output. This is the name you will use in your prompts to Bob, for example: <em>"Run this in my dev-day-env environment."</em></p>
+          </div>
+
+          <div class="note warning">
+            <span class="note-title">Note</span>
+            <p>The environment name <code>dev-day-env</code> shown in the screenshot below is just an example. Your pre-created lab environment may have a different name. Always use the actual environment name returned by <code>confluent environment list</code> (or check it directly in the Confluent Cloud UI).</p>
+          </div>
+
+          <figure>
+            <img src="screenshots/01-environments.png" alt="Confluent Cloud environments overview" />
+            <figcaption>Figure 2. Environments overview.</figcaption>
+          </figure>
+        </section>
+
+        <!-- ---------- Step 2 ---------- -->
+        <section class="step" id="step-2">
+          <cds-tag type="blue" class="step-label">Step 2</cds-tag>
+          <h2>Provision Managed Kafka Cluster &amp; API Keys</h2>
+          <p>Ask Bob to provision a managed Kafka cluster and generate the necessary API keys.</p>
+
+          <div class="prompt">
+            <p class="prompt-label">Prompt Bob</p>
+            <p>"Provision a Standard Kafka cluster called <code>dev-day-cluster</code> in AWS <code>us-east-2</code> (Ohio) in my active environment. Once it's running, generate a cluster API key and secret and configure the CLI context to use them."</p>
+          </div>
+
+          <cds-accordion>
+            <cds-accordion-item title="What Bob does under the hood">
+              <div class="acc-body">
+                <p>Bob provisions the cluster, waits for status <code>UP</code>, and configures authentication:</p>
+                <cds-code-snippet type="multi" wrap-text feedback="Copied!">confluent kafka cluster create dev-day-cluster --cloud aws --region us-east-2 --type standard
+confluent kafka cluster use &lt;CLUSTER_ID&gt;
+confluent api-key create --resource &lt;CLUSTER_ID&gt; --description "Lab CLI Key"
+confluent api-key use &lt;API_KEY&gt; --resource &lt;CLUSTER_ID&gt;</cds-code-snippet>
+              </div>
+            </cds-accordion-item>
+          </cds-accordion>
+
+          <div class="checkpoint">
+            <div class="cp-title"><cds-tag type="green">UI checkpoint</cds-tag> Cluster running</div>
+            <p>Navigate to <strong>Clusters</strong> in the Confluent Cloud console. Confirm your cluster status is <strong>Running</strong>.</p>
+          </div>
+          <figure>
+            <img src="screenshots/02-cluster-running.png" alt="Kafka cluster in Running state" />
+            <figcaption>Figure 3. Cluster running.</figcaption>
+          </figure>
+        </section>
+
+        <!-- ---------- Step 3 ---------- -->
+        <section class="step" id="step-3">
+          <cds-tag type="blue" class="step-label">Step 3</cds-tag>
+          <h2>Deploy Datagen Source Connectors</h2>
+          <p>Ask Bob to stand up the mock data streams using Confluent's Datagen Source connectors.</p>
+
+          <div class="prompt">
+            <p class="prompt-label">Prompt Bob</p>
+            <p>"Deploy two Datagen Source connectors to my cluster using AVRO format: one for Users (<code>sample_data_users</code> topic using the <code>USERS</code> quickstart) and one for Stock Trades (<code>sample_data_stock_trades</code> topic using the <code>STOCK_TRADES</code> quickstart). Then verify that messages are streaming into both topics."</p>
+          </div>
+
+          <cds-accordion>
+            <cds-accordion-item title="What Bob does under the hood">
+              <div class="acc-body">
+                <p>Bob generates the connector configuration files dynamically with your cluster credentials and deploys them:</p>
+                <cds-code-snippet type="multi" wrap-text feedback="Copied!">confluent connect cluster create --config-file /tmp/connector-users.json --cluster &lt;CLUSTER_ID&gt;
+confluent connect cluster create --config-file /tmp/connector-stock-trades.json --cluster &lt;CLUSTER_ID&gt;
+confluent connect cluster list
+confluent kafka topic consume sample_data_users -b --value-format avro
+confluent kafka topic consume sample_data_stock_trades -b --value-format avro</cds-code-snippet>
+              </div>
+            </cds-accordion-item>
+          </cds-accordion>
+
+          <div class="checkpoint">
+            <div class="cp-title"><cds-tag type="green">UI checkpoint</cds-tag> Connectors running</div>
+            <p>Navigate to <strong>Connectors</strong> in the Confluent Cloud console. Confirm both connectors show <strong>Running</strong> status with active throughput.</p>
+          </div>
+          <figure>
+            <img src="screenshots/03-connectors-running.png" alt="Both Datagen connectors in Running state" />
+            <figcaption>Figure 4. Datagen connectors running.</figcaption>
+          </figure>
+        </section>
+
+        <!-- ---------- Step 4 ---------- -->
+        <section class="step" id="step-4">
+          <cds-tag type="blue" class="step-label">Step 4</cds-tag>
+          <h2>Provision Apache Flink Compute Pool</h2>
+          <p>Ask Bob to set up the serverless Flink compute pool in the matching region.</p>
+
+          <div class="prompt">
+            <p class="prompt-label">Prompt Bob</p>
+            <p>"Create a Flink compute pool called <code>dev-day-pool</code> in AWS <code>us-east-2</code> with 10 max CFUs in my environment, and set it as my active compute pool."</p>
+          </div>
+
+          <cds-accordion>
+            <cds-accordion-item title="What Bob does under the hood">
+              <div class="acc-body">
+                <p>Bob provisions the Flink pool and switches the CLI context:</p>
+                <cds-code-snippet type="multi" wrap-text feedback="Copied!">confluent flink compute-pool create dev-day-pool --cloud aws --region us-east-2 --max-cfu 10 --wait
+confluent flink compute-pool use &lt;COMPUTE_POOL_ID&gt;</cds-code-snippet>
+              </div>
+            </cds-accordion-item>
+          </cds-accordion>
+
+          <div class="checkpoint">
+            <div class="cp-title"><cds-tag type="green">UI checkpoint</cds-tag> Compute pool running</div>
+            <p>Navigate to <strong>Flink</strong> &rarr; <strong>Compute pools</strong> in Confluent Cloud. Confirm <code>dev-day-pool</code> shows <strong>Running</strong>.</p>
+          </div>
+          <figure>
+            <img src="screenshots/05-flink-compute-pool.png" alt="Flink compute pool dev-day-pool in Running state" />
+            <figcaption>Figure 5. Flink compute pool.</figcaption>
+          </figure>
+        </section>
+
+        <!-- ---------- Step 5 ---------- -->
+        <section class="step" id="step-5">
+          <cds-tag type="blue" class="step-label">Step 5</cds-tag>
+          <h2>Build the Enrichment &amp; Forecasting Pipeline (Flink SQL)</h2>
+          <p>Now instruct Bob to deploy the continuous stream transformations as Materialized Tables.</p>
+
+          <!-- 5.1 -->
+          <h3 id="step-5-1">5.1 Key Users Lookup Table</h3>
+          <div class="prompt">
+            <p class="prompt-label">Prompt Bob</p>
+            <p>"Create a materialized table called <code>users_keyed</code> in Flink from the <code>sample_data_users</code> stream, setting <code>userid</code> as the non-enforced primary key."</p>
+          </div>
+
+          <div class="note info">
+            <span class="note-title">What is a non-enforced primary key?</span>
+            <p>In Flink SQL, a <strong>non-enforced primary key</strong> (<code>PRIMARY KEY &hellip; NOT ENFORCED</code>) declares which column uniquely identifies each row, in this case <code>userid</code>, but does <em>not</em> validate or reject duplicate values at insert time. Flink uses this hint purely as metadata for query optimisation (e.g. to avoid unnecessary deduplication joins). The responsibility for ensuring uniqueness lies with the upstream data source, not the table itself.</p>
+          </div>
+
+          <cds-accordion>
+            <cds-accordion-item title="What Bob does under the hood">
+              <div class="acc-body">
+                <p>Bob synthesizes and submits the Flink SQL statement:</p>
+                <cds-code-snippet type="multi" wrap-text feedback="Copied!">confluent flink statement create users-keyed \
+  --database &lt;CLUSTER_ID&gt; \
+  --sql "CREATE MATERIALIZED TABLE users_keyed (
+    userid STRING NOT NULL,
+    regionid STRING,
+    gender STRING,
+    PRIMARY KEY (userid) NOT ENFORCED
+  ) AS
+  SELECT COALESCE(userid, '') AS userid, regionid, gender FROM sample_data_users;" \
+  --wait</cds-code-snippet>
+              </div>
+            </cds-accordion-item>
+          </cds-accordion>
+
+          <!-- 5.2 -->
+          <h3 id="step-5-2">5.2 Enrich Trades with Customer Context</h3>
+          <div class="prompt">
+            <p class="prompt-label">Prompt Bob</p>
+            <p>"Create a materialized table called <code>trades_enriched</code> that performs a temporal join between <code>sample_data_stock_trades</code> and <code>users_keyed</code> on <code>userid</code> as of the trade rowtime."</p>
+          </div>
+
+          <cds-accordion>
+            <cds-accordion-item title="What Bob does under the hood">
+              <div class="acc-body">
+                <p>Bob constructs the temporal join query and submits it:</p>
+                <cds-code-snippet type="multi" wrap-text feedback="Copied!">confluent flink statement create trades-enriched \
+  --database &lt;CLUSTER_ID&gt; \
+  --sql "CREATE MATERIALIZED TABLE trades_enriched AS
+  SELECT
+    t.userid,
+    t.symbol,
+    t.side,
+    t.quantity,
+    t.price,
+    u.regionid,
+    u.gender
+  FROM sample_data_stock_trades t
+  JOIN users_keyed FOR SYSTEM_TIME AS OF t.\`\$rowtime\` AS u
+    ON t.userid = u.userid;" \
+  --wait</cds-code-snippet>
+              </div>
+            </cds-accordion-item>
+          </cds-accordion>
+
+          <!-- 5.3 -->
+          <h3 id="step-5-3">5.3 Real-Time Trade Forecasting (<code>ML_FORECAST</code>)</h3>
+          <div class="prompt">
+            <p class="prompt-label">Prompt Bob</p>
+            <p>"Create a materialized table called <code>trades_forecast</code> that tumbles <code>trades_enriched</code> into 10-second windows per stock symbol and applies <code>ML_FORECAST</code> with a minimum training size of 10 and horizon of 5 to predict next-window trade counts and upper bounds."</p>
+          </div>
+
+          <cds-accordion>
+            <cds-accordion-item title="What Bob does under the hood">
+              <div class="acc-body">
+                <p>Bob constructs the windowed ML forecasting pipeline and submits it:</p>
+                <cds-code-snippet type="multi" wrap-text feedback="Copied!">confluent flink statement create trades-forecast \
+  --database &lt;CLUSTER_ID&gt; \
+  --sql "CREATE MATERIALIZED TABLE trades_forecast AS
+  SELECT
+    symbol,
+    ts,
+    trade_count                AS current_count,
+    forecast[1].forecast_value AS forecast_count,
+    forecast[1].upper_bound    AS upper_bound
+  FROM (
+    SELECT
+      symbol,
+      window_end AS ts,
+      trade_count,
+      ML_FORECAST(
+        CAST(trade_count AS DOUBLE),
+        window_end,
+        JSON_OBJECT('minTrainingSize' VALUE 10, 'horizon' VALUE 5)
+      ) OVER (
+        PARTITION BY symbol
+        ORDER BY window_time
+      ) AS forecast
+    FROM (
+      SELECT symbol, window_end, window_time, COUNT(*) AS trade_count
+      FROM TABLE(
+        TUMBLE(TABLE trades_enriched, DESCRIPTOR(\$rowtime), INTERVAL '10' SECONDS)
+      )
+      GROUP BY symbol, window_start, window_end, window_time
+    )
+  )
+  WHERE CARDINALITY(forecast) >= 1;" \
+  --wait</cds-code-snippet>
+              </div>
+            </cds-accordion-item>
+          </cds-accordion>
+
+          <div class="checkpoint">
+            <div class="cp-title"><cds-tag type="green">UI checkpoint</cds-tag> Materialized tables active</div>
+            <p>Check <strong>Flink</strong> &rarr; <strong>Materialized tables</strong> and <strong>Statements</strong> in the Confluent Cloud console. Confirm all 3 pipelines are active.</p>
+          </div>
+          <figure>
+            <img src="screenshots/04-flink-materialized-tables.png" alt="Three Flink materialized tables listed as active" />
+            <figcaption>Figure 6. Flink materialized tables.</figcaption>
+          </figure>
+        </section>
+
+        <!-- ---------- Step 6 ---------- -->
+        <section class="step" id="step-6">
+          <cds-tag type="blue" class="step-label">Step 6</cds-tag>
+          <h2>Query Live Enriched &amp; Forecast Streams</h2>
+          <p>Inspect the live streams in the Confluent SQL Workspace to verify that transformations and real-time predictions are producing data.</p>
+
+          <h3>6.1 Inspect Enriched Trades</h3>
+          <p>Open your <strong>SQL Workspace</strong> in Confluent Cloud (or connect via Flink Shell) and run:</p>
+          <cds-code-snippet type="multi" wrap-text feedback="Copied!">SELECT * FROM trades_enriched;</cds-code-snippet>
+          <p style="margin-top: var(--cds-spacing-05)">You will see live trade transactions continuously enriched with user demographics (<code>regionid</code>, <code>gender</code>) flowing through the pipeline in real time.</p>
+          <figure>
+            <img src="screenshots/06-trades-enriched-query.png" alt="SQL workspace showing live enriched trades" />
+            <figcaption>Figure 7. Enriched trades query.</figcaption>
+          </figure>
+
+          <h3>6.2 Inspect Real-Time Predictions &amp; Surges</h3>
+          <div class="prompt">
+            <p class="prompt-label">Prompt Bob</p>
+            <p>"Write a query to retrieve the most recent window's forecast for each stock symbol so we can see which stocks are surging."</p>
+          </div>
+          <p>In your <strong>SQL Workspace</strong> (or via Flink Shell), run:</p>
+          <cds-code-snippet type="multi" wrap-text feedback="Copied!">SELECT symbol, current_count, forecast_count, upper_bound
+FROM (
+  SELECT *,
+    ROW_NUMBER() OVER (PARTITION BY symbol ORDER BY `$rowtime` DESC) AS row_num
+  FROM trades_forecast
+)
+WHERE row_num = 1;</cds-code-snippet>
+          <figure style="margin-top: var(--cds-spacing-05)">
+            <img src="screenshots/07-flink-forecast-result.png" alt="Latest forecast per stock symbol" />
+            <figcaption>Figure 8. Forecast results.</figcaption>
+          </figure>
+
+          <h4>Interpreting the forecast</h4>
+          <ul class="plain">
+            <li><code>current_count</code>: trades recorded in the latest 10-second window.</li>
+            <li><code>forecast_count</code>: predicted volume for the upcoming window.</li>
+            <li><code>upper_bound</code>: upper confidence interval.</li>
+            <li>When <code>forecast_count</code> &gt; <code>current_count</code>, trading activity is <strong>heating up</strong>, allowing proactive capacity and alert provisioning.</li>
+          </ul>
+        </section>
+
+        <!-- ---------- Step 7 ---------- -->
+        <section class="step" id="step-7">
+          <cds-tag type="blue" class="step-label">Step 7</cds-tag>
+          <h2>Stream Live Forecast Data to Snowflake</h2>
+          <p>With <code>trades_forecast</code> now producing real-time ML predictions and verified in Confluent Cloud, this step connects Confluent Cloud to Snowflake, streaming every forecast row into a live Snowflake table automatically. You will sign up for a free Snowflake trial, install the Snowflake CLI, set up authentication, and deploy the Snowflake Sink Connector entirely through Bob prompts.</p>
+          <p>By the end of this step you will have a live <code>LAB.CONFLUENT.TRADES_FORECAST</code> table in Snowflake that grows continuously as new forecasts are produced by Flink.</p>
+
+          <!-- 7.1 -->
+          <h3 id="step-7-1">7.1 Sign Up for Snowflake Free Trial</h3>
+          <p>Before Bob can help, you need a Snowflake account. This is a one-time manual step.</p>
+          <ol class="plain">
+            <li>Go to <a href="https://signup.snowflake.com">signup.snowflake.com</a> and create a free trial account.</li>
+            <li>Choose <strong>AWS</strong> as your cloud provider and <strong>US East (Ohio)</strong> as the region. This matches your Confluent Cloud cluster.</li>
+            <li>Verify your email and log in to <a href="https://app.snowflake.com">app.snowflake.com</a>.</li>
+            <li>Once logged in, find your <strong>account identifier</strong> from the URL <code>https://app.snowflake.com/&lt;org&gt;/&lt;account&gt;</code>. Note both parts (e.g. <code>vrlnecq</code> and <code>xo34979</code>) combined as <code>vrlnecq-xo34979</code>.</li>
+          </ol>
+          <div class="note info">
+            <span class="note-title">Note</span>
+            <p>You can also find your account identifier by clicking your account name in the <strong>bottom-left</strong> of the Snowflake UI.</p>
+          </div>
+
+          <!-- 7.2 -->
+          <h3 id="step-7-2">7.2 Install Snowflake CLI</h3>
+          <div class="prompt">
+            <p class="prompt-label">Prompt Bob</p>
+            <p>"Install the Snowflake CLI tool on my Machine."</p>
+          </div>
+          <cds-accordion>
+            <cds-accordion-item title="What Bob does under the hood">
+              <div class="acc-body">
+                <cds-code-snippet type="multi" wrap-text feedback="Copied!">brew install snowflake-cli
+snow --version</cds-code-snippet>
+              </div>
+            </cds-accordion-item>
+          </cds-accordion>
+          <div class="note success">
+            <span class="note-title">Expected output</span>
+            <p><code>Snowflake CLI version: 3.x.x</code></p>
+          </div>
+          <div class="note warning">
+            <span class="note-title">Harmless warning</span>
+            <p>You may see <code>UserWarning: incompatible version of 'pyarrow'</code> after every <code>snow</code> command. It does not affect functionality; ignore it.</p>
+          </div>
+
+          <!-- 7.3 -->
+          <h3 id="step-7-3">7.3 Connect Snowflake CLI to Your Account</h3>
+          <p>This step requires your Snowflake password. <strong>You will run this command yourself</strong> in the terminal. Bob cannot enter passwords on your behalf.</p>
+          <div class="prompt">
+            <p class="prompt-label">Prompt Bob</p>
+            <p>"What command do I run to add my Snowflake account to the Snow CLI? My account identifier is <code>&lt;YOUR_ACCOUNT_ID&gt;</code>, my username is <code>&lt;YOUR_USERNAME&gt;</code>, and my warehouse is <code>COMPUTE_WH</code>."</p>
+          </div>
+          <p>Bob will print the exact command for you. It will look like:</p>
+          <cds-code-snippet type="multi" wrap-text feedback="Copied!">snow connection add \
+  --connection-name lab \
+  --account &lt;YOUR_ACCOUNT_ID&gt; \
+  --user &lt;YOUR_USERNAME&gt; \
+  --warehouse COMPUTE_WH \
+  --database SNOWFLAKE \
+  --schema PUBLIC</cds-code-snippet>
+          <div class="note warning" style="margin-top: var(--cds-spacing-05)">
+            <span class="note-title">Run this command yourself</span>
+            <p>It will prompt you for your password interactively. This is intentional. Use <code>--database SNOWFLAKE</code> (not <code>LAB</code>) at this stage since the <code>LAB</code> database doesn't exist yet.</p>
+          </div>
+          <p>Once you've run it, ask Bob to verify the connection:</p>
+          <div class="prompt">
+            <p class="prompt-label">Prompt Bob</p>
+            <p>"Verify my Snowflake CLI connection called <code>lab</code> is working."</p>
+          </div>
+          <cds-accordion>
+            <cds-accordion-item title="What Bob does under the hood">
+              <div class="acc-body">
+                <cds-code-snippet type="multi" wrap-text feedback="Copied!">snow sql --connection lab -q "SELECT CURRENT_USER(), CURRENT_ACCOUNT();"</cds-code-snippet>
+              </div>
+            </cds-accordion-item>
+          </cds-accordion>
+          <div class="note success">
+            <span class="note-title">Expected output</span>
+            <p>Your Snowflake username and account ID returned.</p>
+          </div>
+
+          <!-- 7.4 -->
+          <h3 id="step-7-4">7.4 Create Snowflake Database and Schema</h3>
+          <div class="prompt">
+            <p class="prompt-label">Prompt Bob</p>
+            <p>"Create a database called <code>LAB</code> and a schema called <code>CONFLUENT</code> inside it in Snowflake using the <code>lab</code> connection."</p>
+          </div>
+          <cds-accordion>
+            <cds-accordion-item title="What Bob does under the hood">
+              <div class="acc-body">
+                <cds-code-snippet type="multi" wrap-text feedback="Copied!">snow sql --connection lab -q "
+CREATE DATABASE IF NOT EXISTS LAB;
+CREATE SCHEMA IF NOT EXISTS LAB.CONFLUENT;
+"</cds-code-snippet>
+              </div>
+            </cds-accordion-item>
+          </cds-accordion>
+          <div class="note success">
+            <span class="note-title">Expected output</span>
+            <p><code>Database LAB successfully created</code> and <code>Schema CONFLUENT successfully created</code>.</p>
+          </div>
+          <div class="note info">
+            <span class="note-title">Do not create the TRADES_FORECAST table yourself</span>
+            <p>The connector will auto-create it with the correct schema. Pre-creating it causes a schema compatibility error.</p>
+          </div>
+
+          <!-- 7.5 -->
+          <h3 id="step-7-5">7.5 Generate RSA Key Pair &amp; Assign to Your Snowflake User</h3>
+          <p>The Snowflake Sink Connector does <strong>not</strong> support username + password authentication. It requires an RSA key pair. Bob will generate the key pair and assign the public key to your Snowflake user.</p>
+          <div class="prompt">
+            <p class="prompt-label">Prompt Bob</p>
+            <p>"Generate an RSA key pair for the Snowflake Sink Connector and assign the public key to my Snowflake user <code>&lt;YOUR_USERNAME&gt;</code> using the <code>lab</code> connection."</p>
+          </div>
+          <cds-accordion>
+            <cds-accordion-item title="What Bob does under the hood">
+              <div class="acc-body">
+                <cds-code-snippet type="multi" wrap-text feedback="Copied!"># Generate 2048-bit RSA private key (PKCS8, unencrypted)
+openssl genrsa 2048 | openssl pkcs8 -topk8 -nocrypt -out /tmp/snowflake_key.p8
+
+# Derive public key
+openssl rsa -in /tmp/snowflake_key.p8 -pubout -out /tmp/snowflake_key.pub
+
+# Assign public key to your Snowflake user
+PUB_KEY=$(cat /tmp/snowflake_key.pub | grep -v "PUBLIC KEY" | tr -d '\n')
+snow sql --connection lab -q "ALTER USER &lt;YOUR_USERNAME&gt; SET RSA_PUBLIC_KEY='$PUB_KEY';"</cds-code-snippet>
+              </div>
+            </cds-accordion-item>
+          </cds-accordion>
+          <div class="note success">
+            <span class="note-title">Expected output</span>
+            <p><code>Statement executed successfully</code></p>
+          </div>
+
+          <!-- 7.6 -->
+          <h3 id="step-7-6">7.6 Deploy the Snowflake Sink Connector</h3>
+          <div class="prompt">
+            <p class="prompt-label">Prompt Bob</p>
+            <p>"Deploy a Snowflake Sink Connector called <code>SnowflakeSink_trades_forecast</code> that streams the <code>trades_forecast</code> Kafka topic into <code>LAB.CONFLUENT</code> in Snowflake. Use my Snowflake account <code>&lt;YOUR_ACCOUNT_ID&gt;</code>, username <code>&lt;YOUR_USERNAME&gt;</code>, role <code>ACCOUNTADMIN</code>, SNOWPIPE_STREAMING ingestion with schematization enabled, and AVRO input format."</p>
+          </div>
+          <cds-accordion>
+            <cds-accordion-item title="What Bob does under the hood">
+              <div class="acc-body">
+                <p>Bob builds the connector config via Python (to safely embed the private key) then deploys it:</p>
+                <cds-code-snippet type="multi" wrap-text feedback="Copied!"># Build config - Python handles the base64 key safely on macOS
+import json
+
+with open('/tmp/snowflake_key.p8') as f:
+    lines = f.readlines()
+private_key = ''.join(l.strip() for l in lines if 'PRIVATE KEY' not in l)
+
+config = {
+  "name": "SnowflakeSink_trades_forecast",
+  "config": {
+    "connector.class": "SnowflakeSink",
+    "kafka.auth.mode": "KAFKA_API_KEY",
+    "kafka.api.key": "&lt;KAFKA_API_KEY&gt;",
+    "kafka.api.secret": "&lt;KAFKA_API_SECRET&gt;",
+    "topics": "trades_forecast",
+    "input.data.format": "AVRO",
+    "snowflake.url.name": "&lt;YOUR_ACCOUNT_ID&gt;.snowflakecomputing.com",
+    "snowflake.user.name": "&lt;YOUR_USERNAME&gt;",
+    "snowflake.private.key": private_key,
+    "snowflake.role.name": "ACCOUNTADMIN",
+    "snowflake.database.name": "LAB",
+    "snowflake.schema.name": "CONFLUENT",
+    "snowflake.ingestion.method": "SNOWPIPE_STREAMING",
+    "snowflake.enable.schematization": "true",
+    "tasks.max": "1"
+  }
+}</cds-code-snippet>
+                <cds-code-snippet type="multi" wrap-text feedback="Copied!">confluent connect cluster create \
+  --config-file /tmp/connector-snowflake-sink.json \
+  --cluster &lt;CLUSTER_ID&gt;</cds-code-snippet>
+              </div>
+            </cds-accordion-item>
+          </cds-accordion>
+
+          <div class="checkpoint">
+            <div class="cp-title"><cds-tag type="green">UI checkpoint</cds-tag> Sink connector running</div>
+            <p>Navigate to <strong>Connectors</strong> in the Confluent Cloud console. Confirm <code>SnowflakeSink_trades_forecast</code> shows <strong>Running</strong> status with <strong>1 task running</strong>.</p>
+          </div>
+          <figure>
+            <img src="screenshots/09-connector-snowflake-running.png" alt="All connectors running including the Snowflake sink" />
+            <figcaption>Figure 9. All connectors running, including the Snowflake sink.</figcaption>
+          </figure>
+          <figure>
+            <img src="screenshots/10-snowflake-sink-detail.png" alt="Snowflake sink connector detail: Running, 1 task" />
+            <figcaption>Figure 10. Snowflake sink connector detail: Running, 1 task.</figcaption>
+          </figure>
+
+          <!-- 7.7 -->
+          <h3 id="step-7-7">7.7 Verify Live Data Arriving in Snowflake</h3>
+          <p>Wait approximately <strong>90 seconds</strong> after the connector reaches Running status, then ask Bob to check.</p>
+          <div class="prompt">
+            <p class="prompt-label">Prompt Bob</p>
+            <p>"Check how many rows have arrived in <code>LAB.CONFLUENT.TRADES_FORECAST</code> in Snowflake, and show me the 10 most recent forecast rows."</p>
+          </div>
+          <cds-accordion>
+            <cds-accordion-item title="What Bob does under the hood">
+              <div class="acc-body">
+                <cds-code-snippet type="multi" wrap-text feedback="Copied!"># Row count
+snow sql --connection lab -q "SELECT COUNT(*) FROM LAB.CONFLUENT.TRADES_FORECAST;"
+
+# Latest 10 rows
+snow sql --connection lab -q "
+SELECT SYMBOL, TS, CURRENT_COUNT, FORECAST_COUNT, UPPER_BOUND
+FROM LAB.CONFLUENT.TRADES_FORECAST
+ORDER BY TS DESC
+LIMIT 10;"</cds-code-snippet>
+              </div>
+            </cds-accordion-item>
+          </cds-accordion>
+
+          <h4>Expected output (example)</h4>
+          <pre class="block">SYMBOL | TS            | CURRENT_COUNT | FORECAST_COUNT | UPPER_BOUND
+ZWZZT  | 1791388000000 | 19            | 23.0           | 67.0
+ZBZX   | 1791388000000 | 16            | 16.0           | 30.0
+ZVV    | 1791388000000 | 16            | 15.0           | 31.0
+ZJZZT  | 1791388000000 | 28            | 18.0           | 36.0
+...</pre>
+          <div class="note info">
+            <span class="note-title">Row count grows slowly at first</span>
+            <p><code>ML_FORECAST</code> needs a minimum of 10 training windows per symbol before emitting forecasts. Once that threshold is met, new rows arrive every ~10 seconds per symbol.</p>
+          </div>
+
+          <div class="checkpoint">
+            <div class="cp-title"><cds-tag type="green">UI checkpoint</cds-tag> Snowflake</div>
+            <p>Open <a href="https://app.snowflake.com">Snowflake</a> and navigate to <strong>LAB &rarr; CONFLUENT &rarr; TRADES_FORECAST</strong>. You should see the table auto-created with 6 columns and a live row count growing.</p>
+          </div>
+          <figure>
+            <img src="screenshots/11-snowflake-table-created.png" alt="Snowflake table auto-created with named columns" />
+            <figcaption>Figure 11. Table auto-created with named columns.</figcaption>
+          </figure>
+          <p>Click the <strong>Preview</strong> tab to see live rows streaming in from Confluent.</p>
+          <figure>
+            <img src="screenshots/12-snowflake-live-data.png" alt="Live forecast data in Snowflake" />
+            <figcaption>Figure 12. Live forecast data in Snowflake.</figcaption>
+          </figure>
+
+          <h4>What the columns mean</h4>
+          <div class="table-wrap">
+            <table class="cds-table">
+              <thead><tr><th>Column</th><th>Meaning</th></tr></thead>
+              <tbody>
+                <tr><td><code>SYMBOL</code></td><td>Stock ticker (e.g. <code>ZBZX</code>, <code>ZVZZT</code>)</td></tr>
+                <tr><td><code>TS</code></td><td>Window end timestamp in milliseconds</td></tr>
+                <tr><td><code>CURRENT_COUNT</code></td><td>Actual trades recorded in the latest 10-second window</td></tr>
+                <tr><td><code>FORECAST_COUNT</code></td><td>ML-predicted trade volume for the next window</td></tr>
+                <tr><td><code>UPPER_BOUND</code></td><td>Upper confidence bound of the forecast</td></tr>
+                <tr><td><code>RECORD_METADATA</code></td><td>Kafka metadata (partition, offset, topic, timestamp)</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>When <code>FORECAST_COUNT</code> &gt; <code>CURRENT_COUNT</code>, trading activity is <strong>heating up</strong>. The platform can proactively provision capacity or trigger alerts before the surge peaks.</p>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <footer>
+    <div class="cds--grid">Trade Forecasting with Confluent Intelligence &middot; AI Agent CLI Lab &middot; Rendered from <code>README.md</code></div>
+  </footer>
+
+</body>
+</html>
