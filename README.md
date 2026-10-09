@@ -22,6 +22,35 @@ By the end of the lab you will have provisioned and wired together the following
 
 ---
 
+## 0. Prerequisite: Enable Web Search for Bob (Tavily MCP)
+
+The Tavily MCP server lets Bob access the web to look up information when it needs to.
+
+### Check the MCP config
+
+The server is already configured for you in this repo. Open [`.bob/mcp.json`](.bob/mcp.json) and confirm it looks like this:
+
+```json
+{
+  "mcpServers": {
+    "tavily": {
+      "type": "streamable-http",
+      "url": "https://mcp.tavily.com/mcp/?tavilyApiKey=YOUR_TAVILY_API_KEY"
+    }
+  }
+}
+```
+
+### Get your Tavily API key
+
+1. Sign up for a free account at [https://app.tavily.com](https://app.tavily.com)
+2. Copy your API key from the dashboard (it starts with `tvly-`)
+3. In [`.bob/mcp.json`](.bob/mcp.json), replace `YOUR_TAVILY_API_KEY` in the URL with your key
+
+### Verify
+
+In Bob, open **Settings → MCP**. The `tavily` server should show as connected. If it does not, reload the Bob window and double-check that the key in the URL is correct and has no extra spaces.
+
 ---
 
 ## 1. Authentication & Environment Setup

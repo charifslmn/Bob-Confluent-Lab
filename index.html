@@ -228,6 +228,7 @@
         <h2>On this page</h2>
         <ul>
           <li><a href="#overview">Overview</a></li>
+          <li><a href="#step-0">0. Prerequisite: Tavily MCP</a></li>
           <li><a href="#step-1">1. Authentication &amp; Environment</a></li>
           <li><a href="#step-2">2. Kafka Cluster &amp; API Keys</a></li>
           <li><a href="#step-3">3. Datagen Source Connectors</a></li>
@@ -277,6 +278,34 @@
             <img src="screenshots/architecture.png" alt="Architecture diagram: Datagen connectors feed Kafka topics, Flink materialized tables enrich and forecast, and a Snowflake sink connector delivers to Snowflake" />
             <figcaption>Figure 1. Lab architecture.</figcaption>
           </figure>
+        </section>
+
+        <!-- ---------- Step 0 ---------- -->
+        <section class="step" id="step-0">
+          <cds-tag type="gray" class="step-label">Prerequisite</cds-tag>
+          <h2>Enable Web Search for Bob (Tavily MCP)</h2>
+          <p>The Tavily MCP server lets Bob access the web to look up information when it needs to.</p>
+
+          <h3>Check the MCP config</h3>
+          <p>The server is already configured for you in this repo. Open <code>.bob/mcp.json</code> and confirm it looks like this:</p>
+          <cds-code-snippet type="multi" wrap-text feedback="Copied!">{
+  "mcpServers": {
+    "tavily": {
+      "type": "streamable-http",
+      "url": "https://mcp.tavily.com/mcp/?tavilyApiKey=YOUR_TAVILY_API_KEY"
+    }
+  }
+}</cds-code-snippet>
+
+          <h3>Get your Tavily API key</h3>
+          <ol class="plain">
+            <li>Sign up for a free account at <a href="https://app.tavily.com">app.tavily.com</a>.</li>
+            <li>Copy your API key from the dashboard (it starts with <code>tvly-</code>).</li>
+            <li>In <code>.bob/mcp.json</code>, replace <code>YOUR_TAVILY_API_KEY</code> in the URL with your key.</li>
+          </ol>
+
+          <h3>Verify</h3>
+          <p>In Bob, open <strong>Settings &rarr; MCP</strong>. The <code>tavily</code> server should show as connected. If it does not, reload the Bob window and double-check that the key in the URL is correct and has no extra spaces.</p>
         </section>
 
         <!-- ---------- Step 1 ---------- -->
