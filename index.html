@@ -228,7 +228,11 @@
         <h2>On this page</h2>
         <ul>
           <li><a href="#overview">Overview</a></li>
-          <li><a href="#step-0">0. Prerequisite: Tavily MCP</a></li>
+          <li><a href="#step-0">0. Get Started: Lab Files &amp; Setup</a></li>
+          <li><a class="sub" href="#step-0-1">0.1 Download from Box</a></li>
+          <li><a class="sub" href="#step-0-2">0.2 Open in Bob</a></li>
+          <li><a class="sub" href="#step-0-3">0.3 What's inside</a></li>
+          <li><a class="sub" href="#step-0-4">0.4 Configure Tavily MCP</a></li>
           <li><a href="#step-1">1. Authentication &amp; Environment</a></li>
           <li><a href="#step-2">2. Kafka Cluster &amp; API Keys</a></li>
           <li><a href="#step-3">3. Datagen Source Connectors</a></li>
@@ -282,12 +286,35 @@
 
         <!-- ---------- Step 0 ---------- -->
         <section class="step" id="step-0">
-          <cds-tag type="gray" class="step-label">Prerequisite</cds-tag>
-          <h2>Enable Web Search for Bob (Tavily MCP)</h2>
-          <p>The Tavily MCP server lets Bob access the web to look up information when it needs to.</p>
+          <cds-tag type="gray" class="step-label">Get started</cds-tag>
+          <h2>Get the Lab Files &amp; Set Up Bob</h2>
+          <p>Before you start prompting Bob, download the lab folder and open it in Bob. This takes a few minutes and only needs to be done once.</p>
 
-          <h3>Check the MCP config</h3>
-          <p>The server is already configured for you in this repo. Open <code>.bob/mcp.json</code> and confirm it looks like this:</p>
+          <h3 id="step-0-1">0.1 Download the lab folder from Box</h3>
+          <ol class="plain">
+            <li>Open the <a href="https://ibm.box.com/s/wcbptppm61rdon87kg71uxqxhnkuarab">lab Box link</a>.</li>
+            <li>Download the <strong>entire</strong> <code>Bob-Confluent-Lab-main</code> folder to your computer. Do not download individual files from inside it.</li>
+            <li>If your browser downloaded it as a zip file, unzip it.</li>
+          </ol>
+
+          <h3 id="step-0-2">0.2 Open the folder in Bob</h3>
+          <ol class="plain">
+            <li>In Bob, choose <strong>File &rarr; Open Folder</strong>.</li>
+            <li>Select the <code>Bob-Confluent-Lab-main</code> folder that directly contains the <code>.bob</code> folder and open it. After unzipping, this may be nested inside another folder with the same name, so open the innermost <code>Bob-Confluent-Lab-main</code>.</li>
+          </ol>
+
+          <h3 id="step-0-3">0.3 What's inside the folder</h3>
+          <p>The folder contains a single hidden <code>.bob</code> folder. It holds everything Bob needs for this lab:</p>
+          <ul class="plain">
+            <li><code>.bob/skills/</code>: skill files that give Bob best practices for working with Confluent Cloud (<code>confluent-cloud</code>) and Snowflake (<code>snowflake-connector</code>), so it follows the recommended approach when it runs CLI commands from your plain-English prompts.</li>
+            <li><code>.bob/mcp.json</code>: the MCP config file that connects Bob to the Tavily web search server.</li>
+          </ul>
+
+          <h3 id="step-0-4">0.4 Configure the Tavily MCP</h3>
+          <p>The Tavily MCP server lets Bob access the web to look up information when it needs to. It is already set up for you, so you only need to add your own API key.</p>
+
+          <h4>Check the MCP config</h4>
+          <p>Open <code>.bob/mcp.json</code> and confirm it looks like this:</p>
           <cds-code-snippet type="multi" wrap-text feedback="Copied!">{
   "mcpServers": {
     "tavily": {
@@ -297,14 +324,14 @@
   }
 }</cds-code-snippet>
 
-          <h3>Get your Tavily API key</h3>
+          <h4>Get your Tavily API key</h4>
           <ol class="plain">
             <li>Sign up for a free account at <a href="https://app.tavily.com">app.tavily.com</a>.</li>
             <li>Copy your API key from the dashboard (it starts with <code>tvly-</code>).</li>
             <li>In <code>.bob/mcp.json</code>, replace <code>YOUR_TAVILY_API_KEY</code> in the URL with your key.</li>
           </ol>
 
-          <h3>Verify</h3>
+          <h4>Verify</h4>
           <p>In Bob, open <strong>Settings &rarr; MCP</strong>. The <code>tavily</code> server should show as connected. If it does not, reload the Bob window and double-check that the key in the URL is correct and has no extra spaces.</p>
         </section>
 
