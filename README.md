@@ -79,6 +79,23 @@ In Bob, open **Settings → MCP**. The `tavily` server should show as connected.
 
 Log in to Confluent Cloud via the CLI and set your active environment context to the pre-provisioned lab environment.
 
+### Install the Confluent CLI
+
+### 💬 Prompt Bob
+
+> **"Install the Confluent CLI on my machine."**
+
+<details>
+<summary>⚙️ What Bob does under the hood</summary>
+
+```bash
+brew install confluentinc/tap/cli
+confluent version
+```
+</details>
+
+**Expected output:** `confluent version` prints the installed CLI version ✅
+
 ### CLI Login
 
 Run the following command to authenticate with your Confluent Cloud account:
